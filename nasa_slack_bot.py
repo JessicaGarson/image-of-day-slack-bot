@@ -6,7 +6,6 @@ from slackclient import SlackClient
 from nasa import nasa_image
 
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
-bot_id = None
 
 RTM_READ_DELAY = 1
 SPACE_COMMAND = 'image'
@@ -17,6 +16,9 @@ def parse_bot_commands(slack_events):
     for event in slack_events:
         if event['type'] == 'message' and not 'subtype' in event:
             user_id, message = parse_direct_mention(event['text'])
+            if user_id == starterbot_id:
+                return message, event['channel']
+    return None, None
 
 
 def parse_direct_mention(message_text):
@@ -25,7 +27,7 @@ def parse_direct_mention(message_text):
 
 
 def handle_command(command, channel):
-    default_response = 'Not sure what you mean. Try *{}* to get the image of the day.'.format(SPACE_COMMAND)
+    default_response = 'Not sure what you mean. Try *{}*.'.format(SPACE_COMMAND)
     response = None
     if command.startswith(SPACE_COMMAND):
         response = nasa_image()
@@ -40,7 +42,7 @@ def handle_command(command, channel):
 if __name__ == '__main__':
     if slack_client.rtm_connect(with_team_state=False):
         print('NASA image of the day bot connected and running!')
-        bot_id = slack_client.api_call('auth.test')['user_id']
+        starterbot_id = slack_client.api_call('auth.test')['user_id']
         while True:
             command, channel = parse_bot_commands(slack_client.rtm_read())
             if command:
